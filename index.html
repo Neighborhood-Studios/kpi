@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neighborhood Studios · KPI</title>
+<meta name="description" content="Neighborhood Studios portfolio KPI wall — one headline metric per operating company with week-over-week time travel.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Neighborhood Studios · KPI">
+<meta property="og:description" content="Portfolio KPI wall for the Neighborhood Studios family of companies.">
+<meta property="og:url" content="https://kpi.neighborhoodstudios.com/">
+<meta property="og:site_name" content="Neighborhood Studios">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Neighborhood Studios · KPI">
+<meta name="twitter:description" content="Portfolio KPI wall for the Neighborhood Studios family of companies.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:wght@400;600;700;800&family=Shantell+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="design-tokens/colors.css">
+<link rel="stylesheet" href="design-tokens/typography.css">
+<link rel="stylesheet" href="design-tokens/spacing.css">
+<link rel="stylesheet" href="design-tokens/effects.css">
+
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--paper); overflow: hidden; font-family: var(--font-sans); color: var(--nbs-ink); }
+  * { box-sizing: border-box; }
+  a { color: inherit; }
+  button { font: inherit; }
+
+  @keyframes nbsPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.7); } }
+
+  #kpi-canvas ::-webkit-scrollbar { height: 8px; }
+  #kpi-canvas ::-webkit-scrollbar-thumb { background: rgba(46,46,46,.2); border-radius: 999px; }
+
+  .hl { background: linear-gradient(180deg, transparent 55%, var(--nbs-yellow) 55%, var(--nbs-yellow) 92%, transparent 92%); padding: 0 .06em; }
+
+  /* Washi-tape strip pinned to the top of each card */
+  .kpi-tape {
+    position: absolute; top: -11px; left: 50%;
+    transform: translateX(-50%) rotate(-2.5deg);
+    width: 90px; height: 22px;
+    background: rgba(255,238,0,.6);
+    border: 1px solid rgba(46,46,46,.14);
+    box-shadow: var(--shadow-xs);
+    border-radius: 2px; z-index: 3;
+  }
+  .kpi-tape::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 7px, rgba(255,255,255,.4) 7px 8px);
+  }
+  .hero-card:nth-child(2) .kpi-tape { transform: translateX(-50%) rotate(2.5deg); }
+  .hero-card:nth-child(3) .kpi-tape { transform: translateX(-50%) rotate(-1.5deg); }
+  .hero-card:nth-child(4) .kpi-tape { transform: translateX(-50%) rotate(3deg); }
+  .hero-card:nth-child(5) .kpi-tape { transform: translateX(-50%) rotate(-3.5deg); }
+
+  /* Status theming (drives --st / --sts inside each card) */
+  .st-strong { --st: var(--forest);      --sts: var(--forest-soft); }
+  .st-steady { --st: var(--kraft-deep);  --sts: var(--kraft-soft); }
+  .st-soft   { --st: var(--brick);       --sts: var(--brick-soft); }
+
+  .d-up   { color: var(--forest); }
+  .d-down { color: var(--brick); }
+  .d-flat { color: var(--nbs-ink-faint); }
+
+  .sp-now    { background: var(--nbs-ink); }
+  .sp-past   { background: #c7b89b; }
+  .sp-future { background: #e6dcc7; }
+
+  .nav-off { opacity: .3; cursor: default !important; }
+
+  /* Faint SVG grain overlay layered on the parchment */
+  .nbs-grain::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.18  0 0 0 0 0.18  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.05;
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
+  #kpi-canvas { z-index: 1; }
+
+  /* --- Mobile / narrow: readable stacked layout instead of shrinking ---- */
+  #kpi-stage.is-mobile { overflow-y: auto; overflow-x: hidden; overflow: auto !important; -webkit-overflow-scrolling: touch; }
+  #kpi-stage.is-mobile #kpi-canvas { position: static !important; transform: none !important; width: 100% !important; height: auto !important; min-height: 100%; padding: 22px 15px 30px !important; }
+  #kpi-stage.is-mobile .kpi-header { flex-direction: column !important; align-items: stretch !important; gap: 14px !important; }
+  #kpi-stage.is-mobile .kpi-explain { max-width: none !important; text-align: left !important; }
+  #kpi-stage.is-mobile .kpi-explain .kpi-hand { transform-origin: left !important; }
+  #kpi-stage.is-mobile .kpi-stepper { align-self: flex-start; }
+  #kpi-stage.is-mobile .kpi-hero { display: grid !important; grid-template-columns: 1fr 1fr; gap: 12px !important; margin-top: 18px !important; }
+  #kpi-stage.is-mobile .kpi-hero > .hero-card { padding: 16px 14px !important; }
+  #kpi-stage.is-mobile .kpi-hero > .hero-card:nth-child(5) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 6px); }
+  #kpi-stage.is-mobile .c-logo { width: 44px !important; height: 44px !important; }
+  #kpi-stage.is-mobile .c-name { font-size: 18px !important; }
+  #kpi-stage.is-mobile .c-kpi { font-size: 10.5px !important; min-height: 28px !important; margin-top: 14px !important; }
+  #kpi-stage.is-mobile .c-value { font-size: 40px !important; }
+  #kpi-stage.is-mobile .kpi-foot { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+
+  .stepper-btn { width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--nbs-ink); cursor: pointer; user-select: none; transition: background .15s; background: transparent; border: 0; padding: 0; }
+  .stepper-btn:hover:not(.nav-off) { background: rgba(46,46,46,.07); }
+
+  .company-link:hover .c-name { text-decoration: underline; text-decoration-color: var(--cobalt); text-underline-offset: 3px; }
+
+  .gate-btn { font-family: var(--font-sans); font-weight: 800; font-size: 15px; padding: 13px 16px; border: 2px solid var(--nbs-ink); border-radius: 11px; background: var(--nbs-yellow); color: var(--nbs-ink); cursor: pointer; box-shadow: var(--shadow-print); transition: transform .12s, box-shadow .12s; }
+  .gate-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--nbs-ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Password gate + dashboard mount points -->
+<div id="gate-root"></div>
+<div id="app-root"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- State ----------
+  const state = {
+    week: (function () {
+      try { const v = parseInt(localStorage.getItem('nbs_kpi_week'), 10); return (v >= 0 && v <= 9) ? v : 9; }
+      catch (e) { return 9; }
+    })(),
+    pw: '',
+    err: false,
+    unlocked: (function () {
+      try { return localStorage.getItem('nbs_kpi_unlocked') === '1'; }
+      catch (e) { return false; }
+    })()
+  };
+
+  // ---------- Data ----------
+  function weeks() {
+    return ['2026-05-01','2026-05-08','2026-05-15','2026-05-22','2026-05-29',
+            '2026-06-05','2026-06-12','2026-06-19','2026-06-26','2026-07-03'];
+  }
+
+  function companyDefs() {
+    return [
+      { slug:'homegrown', name:'Homegrown', url:'https://joinhomegrown.com', urlText:'joinhomegrown.com',
+        logo:'assets/homegrown.png', kpiLabel:'Deals underwritten last week',
+        unit:'deals closed', fmt:'int', good:7, bad:3,
+        series:[5,8,4,3,9,6,12,7,15,10] },
+      { slug:'loop', name:'Loop', url:'https://loopstuff.com', urlText:'loopstuff.com',
+        logo:'assets/loop.png', kpiLabel:'Items sold via logistics partner',
+        unit:'gross merchandise value', fmt:'usd', good:120000, bad:15000,
+        series:[42000,88000,15000,130000,5000,76000,180000,54000,112000,95000] },
+      { slug:'dandy', name:'Dandy', url:'https://hidandy.com', urlText:'hidandy.com',
+        logo:'assets/dandy.png', kpiLabel:'Handyman capacity utilized',
+        unit:'of bookable hours filled', fmt:'pct', good:85, bad:65,
+        series:[72,68,60,81,77,64,90,85,70,88] },
+      { slug:'january', name:'January', url:'https://januarymemorials.com', urlText:'januarymemorials.com',
+        logo:'assets/january.png', kpiLabel:'New customer submissions',
+        unit:'cremation & celebration-of-life', fmt:'int', good:13, bad:3,
+        series:[3,8,1,12,2,6,14,9,16,11] },
+      { slug:'zing', name:'Zing', url:'https://justzingit.com', urlText:'justzingit.com',
+        logo:'assets/zing.png', kpiLabel:'Weekly revenue, last week',
+        unit:'revenue collected', fmt:'usd', good:3800, bad:2800,
+        series:[3100,2600,3400,2900,3600,4000,3300,3800,2800,4000],
+        secondarySeries:[40,33,44,37,46,52,42,49,36,51], secondaryLabel:'cleaning jobs' }
+    ];
+  }
+
+  function experimentDefs() {
+    return [
+      { name:'Switchboard', kpiLabel:'Total dispatched jobs · calls answered',
+        unit:'per week', fmt:'int', series:[40,55,48,62,58,71,66,80,74,92], live:true },
+      { name:'Stacked', kpiLabel:'In-person mattress appointment bookings',
+        unit:'per week', fmt:'int', series:[6,9,7,12,10,14,11,17,15,21], live:true },
+      { name:'Experiment 03', kpiLabel:'Coming soon', placeholder:true },
+      { name:'Experiment 04', kpiLabel:'Coming soon', placeholder:true },
+      { name:'Experiment 05', kpiLabel:'Coming soon', placeholder:true }
+    ];
+  }
+
+  // ---------- Formatters (ported directly from Component class) ----------
+  function fmtVal(fmt, v) {
+    if (fmt === 'usd') {
+      if (v >= 1000) {
+        const k = v / 1000;
+        return '$' + (k >= 100 ? Math.round(k) : Math.round(k * 10) / 10) + 'K';
+      }
+      return '$' + v;
+    }
+    if (fmt === 'pct') return v + '%';
+    return v.toLocaleString();
+  }
+
+  function fmtDelta(fmt, d) {
+    const sign = d > 0 ? '+' : (d < 0 ? '\u2212' : '\u00b1');
+    const a = Math.abs(d);
+    if (fmt === 'usd') {
+      let s;
+      if (a >= 1000) {
+        const k = a / 1000;
+        s = '$' + (k >= 100 ? Math.round(k) : Math.round(k * 10) / 10) + 'K';
+      } else s = '$' + a;
+      return sign + s;
+    }
+    if (fmt === 'pct') return sign + a + ' pts';
+    return sign + a;
+  }
+
+  function fmtDate(iso, mode) {
+    const p = iso.split('-').map(Number);
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (mode === 'long') return M[p[1]-1] + ' ' + p[2] + ', ' + p[0];
+    return M[p[1]-1] + ' ' + p[2];
+  }
+
+  function statusFor(v, good, bad) {
+    if (v >= good) return { cls: 'st-strong', label: 'Strong week' };
+    if (v <= bad)  return { cls: 'st-soft',   label: 'Soft week' };
+    return { cls: 'st-steady', label: 'Steady' };
+  }
+
+  function deltaFields(series, w, fmt) {
+    if (w === 0) return { deltaArrow: '\u2022', deltaText: 'First tracked week', deltaClass: 'd-flat' };
+    const d = series[w] - series[w-1];
+    const arrow = d > 0 ? '\u25B2' : (d < 0 ? '\u25BC' : '\u2022');
+    const cls = d > 0 ? 'd-up' : (d < 0 ? 'd-down' : 'd-flat');
+    return { deltaArrow: arrow, deltaText: fmtDelta(fmt, d) + ' WoW', deltaClass: cls };
+  }
+
+  function sparkHeight(v, min, max) {
+    const norm = max === min ? 0.5 : (v - min) / (max - min);
+    // 14–100% of container
+    return 14 + norm * 86;
+  }
+
+  function spark(series, w) {
+    const mn = Math.min.apply(null, series);
+    const mx = Math.max.apply(null, series);
+    return series.map(function (v, i) {
+      const h = sparkHeight(v, mn, mx);
+      const tone = i === w ? 'sp-now' : (i < w ? 'sp-past' : 'sp-future');
+      return { cls: tone, heightPct: h };
+    });
+  }
+
+  // ---------- Rendering helpers ----------
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+    });
+  }
+
+  function persistWeek(w) {
+    try { localStorage.setItem('nbs_kpi_week', String(w)); } catch (_) {}
+  }
+
+  // ---------- Gate render ----------
+  function renderGate() {
+    const root = document.getElementById('gate-root');
+    if (state.unlocked) { root.innerHTML = ''; return; }
+    root.innerHTML = ''
+      + '<div class="nbs-grain" style="position:fixed;inset:0;z-index:100;background:radial-gradient(120% 90% at 50% -12%, #fcf8ee 0%, var(--paper) 44%, var(--paper-deep) 100%);display:flex;align-items:center;justify-content:center;padding:24px;">'
+      +   '<div style="width:min(410px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);padding:42px 34px 34px;text-align:center;position:relative;z-index:1;">'
+      +     '<span class="kpi-tape" aria-hidden="true"></span>'
+      +     '<img src="assets/nbs-mark.png" alt="Neighborhood Studios" style="width:60px;height:60px;object-fit:contain;">'
+      +     '<div style="font-family:var(--font-display);font-size:26px;text-transform:uppercase;color:var(--nbs-ink);margin-top:14px;letter-spacing:.01em;">Neighborhood Studios</div>'
+      +     '<div style="font-family:var(--font-hand);font-weight:600;font-size:18px;color:var(--cobalt);margin-top:3px;transform:rotate(-1.5deg);">locals only \u2726</div>'
+      +     '<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--nbs-ink-faint);margin-top:18px;">Password required</div>'
+      +     '<form id="gate-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">'
+      +       '<input id="gate-input" type="password" value="' + escapeHtml(state.pw) + '" placeholder="Enter password" autocomplete="current-password" style="font-family:var(--font-mono);font-size:15px;text-align:center;padding:13px 16px;border:2px solid var(--nbs-ink);border-radius:11px;background:var(--surface-2);color:var(--nbs-ink);outline:none;letter-spacing:.05em;">'
+      +       '<button type="submit" class="gate-btn">Enter the studio</button>'
+      +     '</form>'
+      + (state.err ? '<div style="font-family:var(--font-sans);font-size:13px;color:var(--brick);margin-top:12px;">That\u2019s not it \u2014 try again, neighbor.</div>' : '')
+      +   '</div>'
+      + '</div>';
+
+    const form = document.getElementById('gate-form');
+    const input = document.getElementById('gate-input');
+    input.focus();
+    input.addEventListener('input', function (e) {
+      state.pw = e.target.value;
+      state.err = false;
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (state.pw === 'localsonly') {
+        try { localStorage.setItem('nbs_kpi_unlocked', '1'); } catch (_) {}
+        state.unlocked = true;
+        state.err = false;
+        render();
+        fit();
+      } else {
+        state.err = true;
+        renderGate();
+      }
+    });
+  }
+
+  // ---------- Dashboard render ----------
+  function renderDashboard() {
+    const w = state.week;
+    const iso = weeks()[w];
+
+    const companies = companyDefs().map(function (c) {
+      const v = c.series[w];
+      const st = statusFor(v, c.good, c.bad);
+      const df = deltaFields(c.series, w, c.fmt);
+      let secondary = null;
+      if (c.secondarySeries) secondary = c.secondarySeries[w].toLocaleString() + ' ' + c.secondaryLabel;
+      return {
+        slug: c.slug, name: c.name, url: c.url, urlText: c.urlText, logo: c.logo,
+        kpiLabel: c.kpiLabel, unit: c.unit,
+        value: fmtVal(c.fmt, v), secondary: secondary,
+        statusClass: st.cls, statusLabel: st.label,
+        deltaArrow: df.deltaArrow, deltaText: df.deltaText, deltaClass: df.deltaClass,
+        spark: spark(c.series, w),
+        weekDate: 'Wk ending ' + fmtDate(iso)
+      };
+    });
+
+    const experiments = experimentDefs().map(function (e) {
+      if (e.placeholder) return { name: e.name, kpiLabel: e.kpiLabel, isPlaceholder: true, isLive: false };
+      const df = deltaFields(e.series, w, e.fmt);
+      return {
+        name: e.name, kpiLabel: e.kpiLabel, unit: e.unit,
+        isLive: true, isPlaceholder: false,
+        value: fmtVal(e.fmt, e.series[w]),
+        deltaArrow: df.deltaArrow, deltaText: df.deltaText, deltaClass: df.deltaClass,
+        weekDate: fmtDate(iso)
+      };
+    });
+
+    const rel = 9 - w;
+    const weekSub = rel === 0 ? 'Most recent' : (rel === 1 ? '1 week ago' : rel + ' weeks ago');
+    const weekLabel = fmtDate(iso, 'long');
+    const prevClass = w === 0 ? 'nav-off' : '';
+    const nextClass = w === 9 ? 'nav-off' : '';
+
+    // Company card HTML
+    const cardsHtml = companies.map(function (c) {
+      const sparkBars = c.spark.map(function (b) {
+        return '<div class="' + b.cls + '" style="flex:1;border-radius:3px 3px 2px 2px;height:' + b.heightPct + '%;"></div>';
+      }).join('');
+      const secondary = c.secondary
+        ? '<div style="margin-top:9px;font-family:var(--font-sans);font-weight:600;font-size:15px;color:var(--nbs-ink-soft);">' + escapeHtml(c.secondary) + '</div>'
+        : '';
+      return ''
+        + '<div class="hero-card ' + c.statusClass + '" style="flex:1;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 46px rgba(46,46,46,.14),0 3px 8px rgba(46,46,46,.10);padding:26px 24px 20px;min-width:0;position:relative;overflow:visible;">'
+        +   '<div style="position:absolute;top:0;left:0;right:0;height:6px;border-radius:20px 20px 0 0;background:var(--st);overflow:hidden;"></div>'
+        +   '<span class="kpi-tape" aria-hidden="true"></span>'
+        +   '<div style="display:flex;align-items:center;gap:13px;">'
+        +     '<div style="flex:none;">'
+        +       '<div class="c-logo" style="width:60px;height:60px;border-radius:14px;overflow:hidden;flex:none;box-shadow:0 3px 9px rgba(0,0,0,.2);">'
+        +         '<img src="' + escapeHtml(c.logo) + '" alt="' + escapeHtml(c.name) + '" style="width:100%;height:100%;object-fit:cover;display:block;">'
+        +       '</div>'
+        +     '</div>'
+        +     '<div style="min-width:0;">'
+        +       '<div class="company-link" style="display:inline-flex;align-items:center;gap:6px;">'
+        +         '<span class="c-name" style="font-family:var(--font-serif);font-weight:800;font-size:25px;letter-spacing:-.01em;color:var(--nbs-ink);line-height:1;">' + escapeHtml(c.name) + '</span>'
+        +       '</div>'
+        +       '<div><a href="' + escapeHtml(c.url) + '" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:12px;color:var(--cobalt);text-decoration:none;">' + escapeHtml(c.urlText) + '</a></div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="c-kpi" style="margin-top:22px;font-family:var(--font-mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--nbs-ink-faint);line-height:1.3;min-height:32px;">' + escapeHtml(c.kpiLabel) + '</div>'
+        +   '<div class="c-value" style="font-family:var(--font-display);font-size:70px;line-height:.92;color:var(--nbs-ink);margin-top:6px;">' + escapeHtml(c.value) + '</div>'
+        +   '<div style="font-family:var(--font-sans);font-size:13px;color:var(--nbs-ink-faint);margin-top:6px;">' + escapeHtml(c.unit) + '</div>'
+        +   secondary
+        +   '<div style="display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap;">'
+        +     '<div style="display:flex;align-items:center;gap:7px;background:var(--sts);padding:5px 11px;border-radius:999px;">'
+        +       '<span style="width:9px;height:9px;border-radius:999px;background:var(--st);"></span>'
+        +       '<span style="font-family:var(--font-sans);font-weight:700;font-size:12px;color:var(--st);">' + escapeHtml(c.statusLabel) + '</span>'
+        +     '</div>'
+        +     '<div class="' + c.deltaClass + '" style="display:flex;align-items:center;gap:5px;font-family:var(--font-sans);font-weight:700;font-size:13px;">'
+        +       '<span>' + c.deltaArrow + '</span><span>' + escapeHtml(c.deltaText) + '</span>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div style="margin-top:auto;display:flex;align-items:flex-end;gap:5px;height:50px;padding-top:14px;">' + sparkBars + '</div>'
+        +   '<div style="margin-top:11px;display:flex;align-items:center;justify-content:space-between;">'
+        +     '<span style="font-family:var(--font-mono);font-size:11px;color:var(--nbs-ink-faint);">' + escapeHtml(c.weekDate) + '</span>'
+        +     '<span style="font-family:var(--font-mono);font-size:11px;color:var(--nbs-ink-faint);">10-wk trend</span>'
+        +   '</div>'
+        + '</div>';
+    }).join('');
+
+    // Experiments
+    const expHtml = experiments.map(function (e) {
+      if (e.isLive) {
+        return ''
+          + '<div style="flex:none;width:306px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-md);">'
+          +   '<div style="display:flex;align-items:center;gap:10px;">'
+          +     '<img src="assets/nbs-mark.png" alt="" style="width:34px;height:34px;object-fit:contain;">'
+          +     '<div style="font-family:var(--font-sans);font-weight:800;font-size:17px;color:var(--nbs-ink);flex:1;">' + escapeHtml(e.name) + '</div>'
+          +     '<div style="display:flex;align-items:center;gap:5px;">'
+          +       '<span class="live-dot" style="width:8px;height:8px;border-radius:999px;background:#57c47f;animation:nbsPulse 1.8s ease-in-out infinite;display:inline-block;"></span>'
+          +       '<span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#57c47f;">Live</span>'
+          +     '</div>'
+          +   '</div>'
+          +   '<div style="margin-top:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--nbs-ink-faint);line-height:1.35;min-height:30px;">' + escapeHtml(e.kpiLabel) + '</div>'
+          +   '<div style="display:flex;align-items:baseline;gap:8px;margin-top:7px;">'
+          +     '<span style="font-family:var(--font-display);font-size:42px;line-height:1;color:var(--nbs-ink);">' + escapeHtml(e.value) + '</span>'
+          +     '<span style="font-family:var(--font-sans);font-size:12px;color:var(--nbs-ink-faint);">' + escapeHtml(e.unit) + '</span>'
+          +   '</div>'
+          +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;">'
+          +     '<span class="' + e.deltaClass + '" style="font-family:var(--font-sans);font-weight:700;font-size:12px;">' + e.deltaArrow + ' ' + escapeHtml(e.deltaText) + '</span>'
+          +     '<span style="font-family:var(--font-mono);font-size:10px;color:var(--nbs-ink-faint);">' + escapeHtml(e.weekDate) + '</span>'
+          +   '</div>'
+          + '</div>';
+      }
+      return ''
+        + '<div style="flex:none;width:230px;background:color-mix(in srgb, var(--paper) 45%, #fff);border:1.5px dashed var(--line-strong);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;">'
+        +   '<div style="display:flex;align-items:center;gap:10px;opacity:.6;">'
+        +     '<img src="assets/nbs-mark.png" alt="" style="width:30px;height:30px;object-fit:contain;filter:grayscale(1);">'
+        +     '<div style="font-family:var(--font-sans);font-weight:700;font-size:15px;color:var(--nbs-ink-soft);">' + escapeHtml(e.name) + '</div>'
+        +   '</div>'
+        +   '<div style="margin-top:auto;padding-top:22px;font-family:var(--font-mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--nbs-ink-faint);">' + escapeHtml(e.kpiLabel) + '</div>'
+        + '</div>';
+    }).join('');
+
+    const app = document.getElementById('app-root');
+    app.innerHTML = ''
+      + '<div id="kpi-stage" class="nbs-grain" style="position:fixed;inset:0;background:radial-gradient(120% 90% at 50% -12%, #fcf8ee 0%, var(--paper) 44%, var(--paper-deep) 100%);overflow:hidden;">'
+      +   '<div id="kpi-canvas" style="position:absolute;top:50%;left:50%;width:1920px;height:1080px;transform:translate(-50%,-50%);transform-origin:center center;display:flex;flex-direction:column;padding:50px 60px 38px;">'
+
+      +     '<div class="kpi-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:28px;flex:none;">'
+      +       '<div class="kpi-brand" style="display:flex;align-items:center;gap:15px;">'
+      +         '<img src="assets/nbs-mark.png" alt="Neighborhood Studios" style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 9px rgba(46,46,46,.22));">'
+      +         '<div style="line-height:1.02;">'
+      +           '<div style="font-family:var(--font-display);font-size:27px;letter-spacing:.01em;color:var(--nbs-ink);text-transform:uppercase;white-space:nowrap;">Neighborhood Studios</div>'
+      +           '<div style="font-family:var(--font-hand);font-weight:600;font-size:15px;color:var(--nbs-ink-soft);margin-top:2px;white-space:nowrap;">a hyperlocal studio \u2014 <span class="hl">the neighborhood, by the numbers</span></div>'
+      +         '</div>'
+      +       '</div>'
+
+      +       '<div class="kpi-stepper" style="display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line-strong);border-radius:999px;padding:6px 8px;margin-top:2px;box-shadow:var(--shadow-sm);">'
+      +         '<button type="button" id="prev-week" class="stepper-btn ' + prevClass + '" aria-label="Previous week">\u2039</button>'
+      +         '<div style="text-align:center;min-width:158px;padding:0 4px;">'
+      +           '<div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--nbs-ink-faint);">Reporting week</div>'
+      +           '<div style="font-family:var(--font-sans);font-weight:700;font-size:18px;color:var(--nbs-ink);margin-top:2px;">' + escapeHtml(weekLabel) + '</div>'
+      +           '<div style="font-family:var(--font-mono);font-size:10px;color:var(--brick);margin-top:2px;">' + escapeHtml(weekSub) + '</div>'
+      +         '</div>'
+      +         '<button type="button" id="next-week" class="stepper-btn ' + nextClass + '" aria-label="Next week">\u203A</button>'
+      +       '</div>'
+
+      +       '<div class="kpi-explain" style="max-width:300px;text-align:right;">'
+      +         '<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--brick);margin-bottom:5px;">Live Portfolio KPIs</div>'
+      +         '<div style="font-family:var(--font-sans);font-size:13px;line-height:1.45;color:var(--nbs-ink-soft);">How every Neighborhood Studios company performed this week. Step the arrows back to see prior weeks and track growth.</div>'
+      +         '<div class="kpi-hand" style="font-family:var(--font-hand);font-weight:600;font-size:15px;color:var(--cobalt);margin-top:6px;transform:rotate(-1.5deg);transform-origin:right;">\u2014 from your block to the board \u2726</div>'
+      +       '</div>'
+      +     '</div>'
+
+      +     '<div class="kpi-hero" style="flex:1;display:flex;gap:22px;margin-top:32px;min-height:0;">' + cardsHtml + '</div>'
+
+      +     '<div style="flex:none;margin-top:26px;">'
+      +       '<div style="display:flex;align-items:baseline;gap:13px;margin-bottom:12px;">'
+      +         '<span style="font-family:var(--font-display);font-size:22px;text-transform:uppercase;color:var(--nbs-ink);letter-spacing:.02em;white-space:nowrap;">Live Experiments</span>'
+      +         '<span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--nbs-ink-faint);">New bets in the studio \u00b7 scroll for more \u2192</span>'
+      +       '</div>'
+      +       '<div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;position:relative;z-index:1;">' + expHtml + '</div>'
+      +     '</div>'
+
+      +     '<div class="kpi-foot" style="flex:none;display:flex;align-items:center;justify-content:space-between;margin-top:20px;">'
+      +       '<div style="display:flex;align-items:center;gap:10px;">'
+      +         '<img src="assets/nbs-mark.png" alt="" style="width:26px;height:26px;object-fit:contain;opacity:.85;">'
+      +         '<span style="font-family:var(--font-sans);font-size:12px;color:var(--nbs-ink-soft);">Neighborhood Studios portfolio KPIs \u2014 illustrative figures shown; live numbers refresh every Monday morning.</span>'
+      +       '</div>'
+      +       '<span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--nbs-ink-faint);">Updated Weekly</span>'
+      +     '</div>'
+
+      +   '</div>'
+      + '</div>';
+
+    // Wire up the stepper
+    const prev = document.getElementById('prev-week');
+    const next = document.getElementById('next-week');
+    prev.addEventListener('click', function () {
+      if (state.week <= 0) return;
+      state.week -= 1;
+      persistWeek(state.week);
+      renderDashboard();
+      fit();
+    });
+    next.addEventListener('click', function () {
+      if (state.week >= 9) return;
+      state.week += 1;
+      persistWeek(state.week);
+      renderDashboard();
+      fit();
+    });
+  }
+
+  // ---------- Fit-to-viewport (desktop scale, mobile stack) ----------
+  function fit() {
+    const stage = document.getElementById('kpi-stage');
+    const c = document.getElementById('kpi-canvas');
+    if (!c || !stage) return;
+    const mobile = window.innerWidth < 900;
+    if (mobile) {
+      stage.classList.add('is-mobile');
+      c.style.transform = 'none';
+    } else {
+      stage.classList.remove('is-mobile');
+      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      c.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+    }
+  }
+
+  function render() {
+    if (state.unlocked) {
+      document.getElementById('gate-root').innerHTML = '';
+      renderDashboard();
+    } else {
+      document.getElementById('app-root').innerHTML = '';
+      renderGate();
+    }
+  }
+
+  // ---------- Bootstrap ----------
+  render();
+  if (state.unlocked) fit();
+  window.addEventListener('resize', fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  setTimeout(fit, 250);
+  setTimeout(fit, 800);
+
+  // Cross-tab sync of shared week (if user opens another window)
+  window.addEventListener('storage', function (ev) {
+    if (ev.key === 'nbs_kpi_week') {
+      const v = parseInt(ev.newValue, 10);
+      if (v >= 0 && v <= 9 && v !== state.week) {
+        state.week = v;
+        if (state.unlocked) { renderDashboard(); fit(); }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
