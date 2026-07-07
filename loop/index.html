@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loop · KPI</title>
+<meta name="description" content="Loop — Items sold via logistics partner · Neighborhood Studios KPI">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Loop · KPI">
+<meta property="og:site_name" content="Neighborhood Studios">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:wght@400;600;700;800&family=Shantell+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../design-tokens/colors.css">
+<link rel="stylesheet" href="../design-tokens/typography.css">
+<link rel="stylesheet" href="../design-tokens/spacing.css">
+<link rel="stylesheet" href="../design-tokens/effects.css">
+
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: var(--font-sans); background: #20302c; }
+  * { box-sizing: border-box; }
+  a { color: inherit; }
+  button { font: inherit; }
+
+  @keyframes ambFloat { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(0,-42px) scale(1.07); } 100% { transform: translate(0,0) scale(1); } }
+  @keyframes heroIn { 0% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: translateY(0); } }
+
+  .dpage { position: fixed; inset: 0; overflow: hidden; background: var(--bg,#20302c); color: var(--fg,#fff); display: flex; flex-direction: column; }
+  .amb { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .amb i { position: absolute; display: block; border-radius: 50%; background: var(--accent,#fff); opacity: .13; filter: blur(3px); animation: ambFloat 15s ease-in-out infinite; }
+  .amb i:nth-child(1){ width: 36vmin; height: 36vmin; left: -7vmin; top: 6vmin; animation-duration: 16s; }
+  .amb i:nth-child(2){ width: 22vmin; height: 22vmin; right: 5vmin; top: -5vmin; animation-duration: 20s; animation-delay: -4s; }
+  .amb i:nth-child(3){ width: 15vmin; height: 15vmin; left: 17vmin; bottom: 9vmin; animation-duration: 13s; animation-delay: -2s; }
+  .amb i:nth-child(4){ width: 27vmin; height: 27vmin; right: 11vmin; bottom: -7vmin; animation-duration: 22s; animation-delay: -7s; }
+  .amb i:nth-child(5){ width: 11vmin; height: 11vmin; left: 46vmin; top: 14vmin; animation-duration: 18s; animation-delay: -5s; }
+  .amb i:nth-child(6){ width: 18vmin; height: 18vmin; right: 33vmin; bottom: 20vmin; animation-duration: 24s; animation-delay: -9s; }
+  @media (prefers-reduced-motion: reduce){ .amb i { animation: none; } }
+  @media (max-height: 600px){ .dblurb { display: none; } }
+
+  .dbar { flex: 1; background: var(--accent,#fff); border-radius: 5px 5px 2px 2px; transition: height .5s cubic-bezier(0.16,1,0.3,1); }
+  .b-now { opacity: 1; }
+  .b-dim { opacity: .34; }
+
+  .stepbtn { width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; user-select: none; transition: background .15s; background: transparent; border: 0; padding: 0; color: var(--fg); }
+  .stepbtn:hover:not(.nav-off) { background: var(--pillbd, rgba(255,255,255,.18)); }
+  .nav-off { opacity: .32; pointer-events: none; }
+
+  .backlink { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg); opacity: .82; text-decoration: none; transition: opacity .15s; }
+  .backlink:hover { opacity: 1; }
+  .extlink { font-family: var(--font-mono); font-size: 13px; color: var(--fg); opacity: .82; text-decoration: none; white-space: nowrap; transition: opacity .15s; }
+  .extlink:hover { opacity: 1; }
+
+  .heroval { font-family: var(--numfont, var(--font-display)); font-weight: 800; line-height: .86; color: var(--num, var(--fg)); font-size: clamp(64px, min(19vw, 26vh), 300px); letter-spacing: -.02em; animation: heroIn .6s cubic-bezier(0.16,1,0.3,1) both; }
+
+  /* Gate — same as dashboard */
+  .gate-btn { font-family: var(--font-sans); font-weight: 800; font-size: 15px; padding: 13px 16px; border: 2px solid var(--nbs-ink); border-radius: 11px; background: var(--nbs-yellow); color: var(--nbs-ink); cursor: pointer; box-shadow: var(--shadow-print); transition: transform .12s, box-shadow .12s; }
+  .gate-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--nbs-ink); }
+  .kpi-tape { position: absolute; top: -11px; left: 50%; transform: translateX(-50%) rotate(-2.5deg); width: 90px; height: 22px; background: rgba(255,238,0,.6); border: 1px solid rgba(46,46,46,.14); box-shadow: var(--shadow-xs); border-radius: 2px; z-index: 3; }
+  .kpi-tape::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 7px, rgba(255,255,255,.4) 7px 8px); }
+  .nbs-grain::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.18  0 0 0 0 0.18  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); opacity: 0.05; mix-blend-mode: multiply; z-index: 0; }
+</style>
+</head>
+<body>
+
+<div id="gate-root"></div>
+<div id="app-root"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const COMPANY = {"slug":"loop","name":"Loop","url":"https://loopstuff.com","urlText":"loopstuff.com","logo":"loop.png","kpiLabel":"Items sold via logistics partner","unit":"gross merchandise value sold","fmt":"usd","good":120000,"bad":15000,"series":[42000,88000,15000,130000,5000,76000,180000,54000,112000,95000],"blurb":"Loop buys the nice stuff neighbors no longer use and gives it a second life — instant offer, porch pickup, no sketchy meetups. This is the total value of items sold through our logistics partner last week.","brand":{"bg":"radial-gradient(125% 120% at 50% -15%, #ff5f72 0%, #f9435a 50%, #df2e44 100%)","fg":"#ffffff","sub":"rgba(255,255,255,.8)","accent":"#ffffff","num":"#ffffff","numFont":"var(--font-display)","pill":"rgba(255,255,255,.15)","pillbd":"rgba(255,255,255,.32)"}};
+  const WEEKS = ['2026-05-01','2026-05-08','2026-05-15','2026-05-22','2026-05-29',
+                 '2026-06-05','2026-06-12','2026-06-19','2026-06-26','2026-07-03'];
+
+  const state = {
+    week: (function () {
+      try { const v = parseInt(localStorage.getItem('nbs_kpi_week'), 10); return (v >= 0 && v <= 9) ? v : 9; }
+      catch (e) { return 9; }
+    })(),
+    disp: 0,
+    pw: '',
+    err: false,
+    unlocked: (function () {
+      try { return localStorage.getItem('nbs_kpi_unlocked') === '1'; }
+      catch (e) { return false; }
+    })(),
+    _raf: null
+  };
+
+  function fmtVal(fmt, v) {
+    if (fmt === 'usd') {
+      if (v >= 1000) { const k = v / 1000; return '$' + (k >= 100 ? Math.round(k) : Math.round(k * 10) / 10) + 'K'; }
+      return '$' + Math.round(v);
+    }
+    if (fmt === 'pct') return Math.round(v) + '%';
+    return Math.round(v).toLocaleString();
+  }
+  function fmtDelta(fmt, d) {
+    const sign = d > 0 ? '+' : (d < 0 ? '\u2212' : '\u00b1');
+    const a = Math.abs(d);
+    if (fmt === 'usd') { let s; if (a >= 1000) { const k = a / 1000; s = '$' + (k >= 100 ? Math.round(k) : Math.round(k * 10) / 10) + 'K'; } else s = '$' + a; return sign + s; }
+    if (fmt === 'pct') return sign + a + ' pts';
+    return sign + a;
+  }
+  function fmtDate(iso, mode) {
+    const p = iso.split('-').map(Number);
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (mode === 'long') return M[p[1]-1] + ' ' + p[2] + ', ' + p[0];
+    return M[p[1]-1] + ' ' + p[2];
+  }
+  function statusLabel(v, good, bad) {
+    if (v >= good) return 'Strong week';
+    if (v <= bad) return 'Soft week';
+    return 'Steady';
+  }
+  function deltaFields(series, w, fmt) {
+    if (w === 0) return { arrow: '\u2022', text: 'first tracked week' };
+    const d = series[w] - series[w-1];
+    const arrow = d > 0 ? '\u25B2' : (d < 0 ? '\u25BC' : '\u2022');
+    return { arrow: arrow, text: fmtDelta(fmt, d) + ' WoW' };
+  }
+  function sparkData(series, w) {
+    const mn = Math.min.apply(null, series), mx = Math.max.apply(null, series);
+    return series.map(function (v, i) {
+      const norm = mx === mn ? 0.5 : (v - mn) / (mx - mn);
+      const step = Math.max(15, Math.min(100, Math.round((14 + norm * 86) / 5) * 5));
+      return { cls: 'dbar ' + (i === w ? 'b-now' : 'b-dim'), height: step };
+    });
+  }
+
+  function applyBrand(b) {
+    const r = document.documentElement.style;
+    r.setProperty('--bg', b.bg); r.setProperty('--fg', b.fg); r.setProperty('--sub', b.sub);
+    r.setProperty('--accent', b.accent); r.setProperty('--num', b.num); r.setProperty('--numfont', b.numFont);
+    r.setProperty('--pill', b.pill); r.setProperty('--pillbd', b.pillbd);
+    document.body.style.background = b.bg;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+    });
+  }
+
+  function persistWeek(w) { try { localStorage.setItem('nbs_kpi_week', String(w)); } catch (_) {} }
+
+  function animateTo(target) {
+    if (state._raf) cancelAnimationFrame(state._raf);
+    const from = state.disp || 0;
+    const start = performance.now();
+    const dur = 680;
+    const tick = function (t) {
+      const p = Math.min(1, (t - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      state.disp = from + (target - from) * e;
+      updateHeroValue();
+      if (p < 1) state._raf = requestAnimationFrame(tick);
+      else { state.disp = target; updateHeroValue(); }
+    };
+    state._raf = requestAnimationFrame(tick);
+  }
+
+  function updateHeroValue() {
+    const el = document.getElementById('hero-value');
+    if (el) el.textContent = fmtVal(COMPANY.fmt, state.disp);
+  }
+
+  // ---------- Gate ----------
+  function renderGate() {
+    const root = document.getElementById('gate-root');
+    if (state.unlocked) { root.innerHTML = ''; return; }
+    root.innerHTML = ''
+      + '<div class="nbs-grain" style="position:fixed;inset:0;z-index:100;background:radial-gradient(120% 90% at 50% -12%, #fcf8ee 0%, var(--paper) 44%, var(--paper-deep) 100%);display:flex;align-items:center;justify-content:center;padding:24px;">'
+      +   '<div style="width:min(410px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);padding:42px 34px 34px;text-align:center;position:relative;z-index:1;">'
+      +     '<span class="kpi-tape" aria-hidden="true"></span>'
+      +     '<img src="../assets/nbs-mark.png" alt="Neighborhood Studios" style="width:60px;height:60px;object-fit:contain;">'
+      +     '<div style="font-family:var(--font-display);font-size:26px;text-transform:uppercase;color:var(--nbs-ink);margin-top:14px;letter-spacing:.01em;">Neighborhood Studios</div>'
+      +     '<div style="font-family:var(--font-hand);font-weight:600;font-size:18px;color:var(--cobalt);margin-top:3px;transform:rotate(-1.5deg);">locals only \u2726</div>'
+      +     '<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--nbs-ink-faint);margin-top:18px;">Password required</div>'
+      +     '<form id="gate-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">'
+      +       '<input id="gate-input" type="password" value="' + escapeHtml(state.pw) + '" placeholder="Enter password" autocomplete="current-password" style="font-family:var(--font-mono);font-size:15px;text-align:center;padding:13px 16px;border:2px solid var(--nbs-ink);border-radius:11px;background:var(--surface-2);color:var(--nbs-ink);outline:none;letter-spacing:.05em;">'
+      +       '<button type="submit" class="gate-btn">Enter the studio</button>'
+      +     '</form>'
+      + (state.err ? '<div style="font-family:var(--font-sans);font-size:13px;color:var(--brick);margin-top:12px;">That\u2019s not it \u2014 try again, neighbor.</div>' : '')
+      +   '</div>'
+      + '</div>';
+
+    const form = document.getElementById('gate-form');
+    const input = document.getElementById('gate-input');
+    input.focus();
+    input.addEventListener('input', function (e) { state.pw = e.target.value; state.err = false; });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (state.pw === 'localsonly') {
+        try { localStorage.setItem('nbs_kpi_unlocked', '1'); } catch (_) {}
+        state.unlocked = true; state.err = false;
+        render();
+      } else {
+        state.err = true;
+        renderGate();
+      }
+    });
+  }
+
+  // ---------- Detail page ----------
+  function renderDetail() {
+    applyBrand(COMPANY.brand);
+    document.title = COMPANY.name + ' · KPI';
+
+    const w = state.week;
+    const c = COMPANY;
+    const v = c.series[w];
+    const df = deltaFields(c.series, w, c.fmt);
+    const status = statusLabel(v, c.good, c.bad);
+    const iso = WEEKS[w];
+    const secondaryHtml = c.secondarySeries
+      ? '<div style="font-family:var(--font-sans);font-weight:600;font-size:clamp(15px,1.9vw,23px);color:var(--fg);margin-top:7px;">' + escapeHtml(c.secondarySeries[w].toLocaleString() + ' ' + c.secondaryLabel) + '</div>'
+      : '';
+    const sd = sparkData(c.series, w);
+    const barsHtml = sd.map(function (b) {
+      return '<div class="' + b.cls + '" style="height:' + b.height + '%;"></div>';
+    }).join('');
+
+    const prevOff = w === 0 ? ' nav-off' : '';
+    const nextOff = w === 9 ? ' nav-off' : '';
+
+    const app = document.getElementById('app-root');
+    app.innerHTML = ''
+      + '<div class="dpage">'
+      +   '<div class="amb" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>'
+
+      +   '<div style="position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:clamp(18px,3vw,34px) clamp(20px,4vw,56px);">'
+      +     '<a href="../" class="backlink">\u2039 Back to dashboard</a>'
+      +     '<div style="display:flex;align-items:center;gap:12px;min-width:0;">'
+      +       '<div style="width:46px;height:46px;border-radius:12px;overflow:hidden;flex:none;box-shadow:0 3px 12px rgba(0,0,0,.28);">'
+      +         '<img src="../assets/' + escapeHtml(c.logo) + '" alt="' + escapeHtml(c.name) + '" style="width:100%;height:100%;object-fit:cover;display:block;">'
+      +       '</div>'
+      +       '<div style="font-family:var(--font-sans);font-weight:800;font-size:clamp(18px,2.2vw,22px);color:var(--fg);">' + escapeHtml(c.name) + '</div>'
+      +     '</div>'
+      +     '<a href="' + escapeHtml(c.url) + '" target="_blank" rel="noopener" class="extlink">' + escapeHtml(c.urlText) + ' \u2197</a>'
+      +   '</div>'
+
+      +   '<div style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 clamp(20px,5vw,60px);min-height:0;">'
+      +     '<div style="font-family:var(--font-mono);font-size:clamp(12px,1.4vw,15px);letter-spacing:.2em;text-transform:uppercase;color:var(--sub);margin-bottom:clamp(8px,2vh,20px);">' + escapeHtml(c.kpiLabel) + '</div>'
+      +     '<div id="hero-value" class="heroval">' + escapeHtml(fmtVal(c.fmt, 0)) + '</div>'
+      +     '<div style="font-family:var(--font-sans);font-size:clamp(14px,1.7vw,21px);color:var(--sub);margin-top:clamp(8px,1.6vh,18px);">' + escapeHtml(c.unit) + '</div>'
+      +     secondaryHtml
+      +     '<div style="display:inline-flex;align-items:center;gap:11px;background:var(--pill,rgba(255,255,255,.12));border:1px solid var(--pillbd,rgba(255,255,255,.22));border-radius:999px;padding:9px 18px;margin-top:clamp(16px,3vh,30px);font-family:var(--font-sans);font-weight:700;font-size:clamp(12px,1.35vw,15px);color:var(--fg);">'
+      +       '<span style="width:9px;height:9px;border-radius:999px;background:var(--accent);"></span>'
+      +       '<span>' + escapeHtml(status) + '</span>'
+      +       '<span style="opacity:.45;">\u00b7</span>'
+      +       '<span>' + df.arrow + ' ' + escapeHtml(df.text) + '</span>'
+      +     '</div>'
+
+      +     '<div style="display:flex;align-items:center;gap:4px;margin-top:clamp(14px,2.4vh,24px);background:var(--pill,rgba(255,255,255,.1));border:1px solid var(--pillbd,rgba(255,255,255,.18));border-radius:999px;padding:5px 7px;">'
+      +       '<button type="button" id="prev-btn" class="stepbtn' + prevOff + '" aria-label="Previous week">\u2039</button>'
+      +       '<div style="text-align:center;min-width:150px;padding:0 4px;">'
+      +         '<div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--sub);">Reporting week</div>'
+      +         '<div style="font-family:var(--font-sans);font-weight:700;font-size:15px;color:var(--fg);margin-top:1px;">' + escapeHtml(fmtDate(iso, 'long')) + '</div>'
+      +       '</div>'
+      +       '<button type="button" id="next-btn" class="stepbtn' + nextOff + '" aria-label="Next week">\u203A</button>'
+      +     '</div>'
+
+      +     '<p class="dblurb" style="max-width:58ch;font-family:var(--font-sans);font-size:clamp(14px,1.5vw,18px);line-height:1.6;color:var(--sub);margin:clamp(16px,3vh,28px) 0 0;text-wrap:pretty;">' + escapeHtml(c.blurb) + '</p>'
+      +   '</div>'
+
+      +   '<div style="position:relative;z-index:2;padding:0 clamp(20px,6vw,90px) clamp(20px,3vh,34px);">'
+      +     '<div style="display:flex;align-items:flex-end;gap:clamp(4px,0.8vw,10px);height:clamp(48px,9vh,88px);">' + barsHtml + '</div>'
+      +     '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-family:var(--font-mono);font-size:clamp(10px,1vw,12px);letter-spacing:.08em;text-transform:uppercase;color:var(--sub);">'
+      +       '<span>' + escapeHtml(fmtDate(WEEKS[0])) + '</span>'
+      +       '<span>10-week trend</span>'
+      +       '<span>' + escapeHtml(fmtDate(iso)) + '</span>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>';
+
+    const prev = document.getElementById('prev-btn');
+    const next = document.getElementById('next-btn');
+    prev.addEventListener('click', function () { if (state.week <= 0) return; state.week -= 1; persistWeek(state.week); renderDetail(); animateTo(COMPANY.series[state.week]); });
+    next.addEventListener('click', function () { if (state.week >= 9) return; state.week += 1; persistWeek(state.week); renderDetail(); animateTo(COMPANY.series[state.week]); });
+
+    animateTo(c.series[w]);
+  }
+
+  function render() {
+    if (state.unlocked) {
+      document.getElementById('gate-root').innerHTML = '';
+      renderDetail();
+    } else {
+      document.getElementById('app-root').innerHTML = '';
+      renderGate();
+    }
+  }
+
+  render();
+
+  window.addEventListener('storage', function (ev) {
+    if (ev.key === 'nbs_kpi_week') {
+      const v = parseInt(ev.newValue, 10);
+      if (v >= 0 && v <= 9 && v !== state.week) {
+        state.week = v;
+        if (state.unlocked) renderDetail();
+      }
+    }
+    if (ev.key === 'nbs_kpi_unlocked' && ev.newValue === '1' && !state.unlocked) {
+      state.unlocked = true;
+      render();
+    }
+  });
+})();
+</script>
+</body>
+</html>

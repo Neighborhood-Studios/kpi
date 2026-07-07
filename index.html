@@ -101,6 +101,11 @@
 
   .company-link:hover .c-name { text-decoration: underline; text-decoration-color: var(--cobalt); text-underline-offset: 3px; }
 
+  .hero-card { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+  .hero-card:hover { transform: translateY(-3px); box-shadow: 0 26px 54px rgba(46,46,46,.18), 0 4px 10px rgba(46,46,46,.12) !important; }
+  .hero-card:hover .c-name { text-decoration: underline; text-decoration-color: var(--cobalt); text-underline-offset: 3px; }
+  .hero-card .ext-link { position: relative; z-index: 2; }
+
   .gate-btn { font-family: var(--font-sans); font-weight: 800; font-size: 15px; padding: 13px 16px; border: 2px solid var(--nbs-ink); border-radius: 11px; background: var(--nbs-yellow); color: var(--nbs-ink); cursor: pointer; box-shadow: var(--shadow-print); transition: transform .12s, box-shadow .12s; }
   .gate-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--nbs-ink); }
 
@@ -344,7 +349,7 @@
         ? '<div style="margin-top:9px;font-family:var(--font-sans);font-weight:600;font-size:15px;color:var(--nbs-ink-soft);">' + escapeHtml(c.secondary) + '</div>'
         : '';
       return ''
-        + '<div class="hero-card ' + c.statusClass + '" style="flex:1;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 46px rgba(46,46,46,.14),0 3px 8px rgba(46,46,46,.10);padding:26px 24px 20px;min-width:0;position:relative;overflow:visible;">'
+        + '<div class="hero-card ' + c.statusClass + '" data-slug="' + escapeHtml(c.slug) + '" role="link" tabindex="0" aria-label="Open ' + escapeHtml(c.name) + ' detail" style="flex:1;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 46px rgba(46,46,46,.14),0 3px 8px rgba(46,46,46,.10);padding:26px 24px 20px;min-width:0;position:relative;overflow:visible;">'
         +   '<div style="position:absolute;top:0;left:0;right:0;height:6px;border-radius:20px 20px 0 0;background:var(--st);overflow:hidden;"></div>'
         +   '<span class="kpi-tape" aria-hidden="true"></span>'
         +   '<div style="display:flex;align-items:center;gap:13px;">'
@@ -357,7 +362,7 @@
         +       '<div class="company-link" style="display:inline-flex;align-items:center;gap:6px;">'
         +         '<span class="c-name" style="font-family:var(--font-serif);font-weight:800;font-size:25px;letter-spacing:-.01em;color:var(--nbs-ink);line-height:1;">' + escapeHtml(c.name) + '</span>'
         +       '</div>'
-        +       '<div><a href="' + escapeHtml(c.url) + '" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:12px;color:var(--cobalt);text-decoration:none;">' + escapeHtml(c.urlText) + '</a></div>'
+        +       '<div><a href="' + escapeHtml(c.url) + '" class="ext-link" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="font-family:var(--font-mono);font-size:12px;color:var(--cobalt);text-decoration:none;">' + escapeHtml(c.urlText) + '</a></div>'
         +     '</div>'
         +   '</div>'
         +   '<div class="c-kpi" style="margin-top:22px;font-family:var(--font-mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--nbs-ink-faint);line-height:1.3;min-height:32px;">' + escapeHtml(c.kpiLabel) + '</div>'
@@ -470,19 +475,34 @@
     // Wire up the stepper
     const prev = document.getElementById('prev-week');
     const next = document.getElementById('next-week');
-    prev.addEventListener('click', function () {
+    prev.addEventListener('click', function (ev) {
+      ev.stopPropagation();
       if (state.week <= 0) return;
       state.week -= 1;
       persistWeek(state.week);
       renderDashboard();
       fit();
     });
-    next.addEventListener('click', function () {
+    next.addEventListener('click', function (ev) {
+      ev.stopPropagation();
       if (state.week >= 9) return;
       state.week += 1;
       persistWeek(state.week);
       renderDashboard();
       fit();
+    });
+
+    // Wire up card navigation
+    const cards = document.querySelectorAll('.hero-card[data-slug]');
+    cards.forEach(function (card) {
+      const go = function () {
+        const slug = card.getAttribute('data-slug');
+        if (slug) location.href = slug + '/';
+      };
+      card.addEventListener('click', go);
+      card.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); }
+      });
     });
   }
 
